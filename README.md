@@ -1,107 +1,94 @@
-GoPlan Engine 🚀
-GoPlan is a high-performance, dynamic project generation engine. It acts as an infrastructure orchestrator that allows developers to instantly scaffold customized backend architectures (like Spring Boot) with pre-configured templates, caching, and clean dependencies.
+# 🚀 GoPlan Engine
 
-✨ Features
-Dynamic Templating: Uses Apache FreeMarker to inject variables (like package names and artifact IDs) directly into raw source code and configuration files.
+[![Java](https://img.shields.io/badge/Java-17%2B-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](https://adoptium.net/)
+[![Spring Boot](https://img.shields.io/badge/Spring%2BBoot-3.x-6DB33F?style=flat-square&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
+[![React](https://img.shields.io/badge/React-UI-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-Remote Fetching: Pulls template structures directly from a remote GitHub repository in real-time using Spring WebFlux's non-blocking WebClient.
+GoPlan is a high-performance, dynamic project generation engine. It acts as an infrastructure orchestrator that allows developers to instantly scaffold customized backend architectures with pre-configured templates, caching, and clean dependencies.
 
-Lightning Fast Caching: Integrates a Dockerized Redis cache layer to bypass GitHub API rate limits and serve generated ZIP files in milliseconds.
+## ✨ Features
 
-Developer-First UI: A sleek, minimal React frontend tailored for engineering speed and usability.
+- **Dynamic Templating:** Uses Apache FreeMarker to inject variables (like package names) directly into raw source code.
+- **Remote Fetching:** Pulls templates directly from a remote GitHub repository in real-time using a non-blocking `WebClient`.
+- **Lightning Fast Caching:** Integrates a Dockerized Redis cache layer to bypass API rate limits and serve generated ZIP files in milliseconds.
+- **Developer-First UI:** A sleek, minimal React frontend tailored for engineering speed.
 
-🛠️ Tech Stack
-Backend Engine:
+---
 
-Java 17+
+## 📋 Prerequisites
 
-Spring Boot 3.x (Web, WebFlux, Cache)
+Before cloning, ensure you have the following installed:
 
-Apache FreeMarker
+- [Java 17+](https://adoptium.net/)
+- [Maven](https://maven.apache.org/)
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- [Docker](https://www.docker.com/) (Required for the caching layer)
 
-Redis (via Docker Compose)
+---
 
-Frontend Interface:
+## 🚀 Getting Started
 
-React (Functional Components & Hooks)
+### 1. Start the Redis Cache
 
-TailwindCSS (Zinc/Slate dark mode palette)
+GoPlan requires Redis to cache the remote templates. We use Docker Compose to make this painless. Run this in the root directory:
 
-Vite
-
-📋 Prerequisites
-Before you begin, ensure you have the following installed on your machine:
-
-Java 17+
-
-Maven
-
-Node.js (v18+ recommended)
-
-Docker Desktop
-
-🚀 Getting Started
-1. Start the Redis Cache (Crucial)
-GoPlan requires Redis to cache the remote GitHub templates. We use Docker Compose to make this painless.
-Open your terminal in the root directory of the project and run:
-
-Bash
 docker compose up -d
-(To shut down the cache later, run docker compose down)
 
-2. Boot the Spring Boot Backend
-Once Redis is running, start the backend orchestrator. Open a new terminal in the backend directory:
+*(To shut down the cache later, run `docker compose down`)*
 
-Bash
+### 2. Boot the Spring Boot Backend
+
+Start the backend orchestrator:
+
 mvn clean install
 mvn spring-boot:run
-The engine will start listening on http://localhost:8080.
 
-3. Launch the React Frontend
-Open a separate terminal instance in your frontend directory:
+*The engine will start listening on `http://localhost:8080`.*
 
-Bash
-# Install dependencies
+### 3. Launch the React Frontend
+
+Open a new terminal and start the UI:
+
+cd frontend
 npm install
-
-# Start the development server
 npm run dev
-The UI will spin up (typically on http://localhost:5173). Open that URL in your browser.
 
-🔌 API Reference
-Generate Project
-Creates a zipped software project based on the provided configuration.
+*Open `http://localhost:5173` in your browser to access the generator.*
 
-Endpoint: POST /api/v1/projects/generate
-Content-Type: application/json
+---
 
-Request Body:
+## 🔌 API Reference
 
-JSON
+### Generate Project
+
+Creates a zipped software project based on your configuration.
+
+**Endpoint:** `POST /api/v1/projects/generate`  
+**Content-Type:** `application/json`
+
+**Payload:**
 {
   "projectName": "auth-service",
   "basePackage": "com.planagency.auth",
   "framework": "SPRING_BOOT"
 }
-Response:
 
-200 OK: Returns a binary .zip file stream containing the generated project.
+**Response:**
+- `200 OK`: Returns a binary `.zip` file stream.
+- `500 Internal Server Error`: Engine failure (Check your Redis container).
 
-500 Internal Server Error: Engine failure (Check Redis connection or GitHub rate limits).
+---
 
-📂 Project Architecture Overview
-Plaintext
+## 📂 Architecture Overview
+
 /goplan-engine
-├── docker-compose.yml       # Redis cache configuration
-├── /backend
-│   ├── /src/main/java/com/planagency/goplan
-│   │   ├── /api             # REST Controllers
-│   │   ├── /dto             # Data Transfer Objects
-│   │   ├── /strategy        # Framework generation strategies
-│   │   └── /service         # GitHub Fetcher & Template Renderer
-│   └── pom.xml
-└── /frontend
-    ├── /src
-    │   ├── App.jsx          # Main UI and API logic
-    │   └── index.css        # Tailwind directives
-    └── package.json
+├── docker-compose.yml       # Redis cache config
+├── /src                     # Spring Boot Backend
+│   ├── /api                 # REST Controllers
+│   ├── /dto                 # Data Transfer Objects
+│   ├── /strategy            # Framework generation strategies
+│   └── /service             # Remote Fetcher & Renderer
+└── /frontend                # React UI
+    └── /src
+        └── App.jsx          # Generator Form & API logic
