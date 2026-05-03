@@ -3,7 +3,6 @@ package com.planagency.goplan.dto;
 import java.util.List;
 
 import com.planagency.goplan.enums.Frameworks;
-import com.planagency.goplan.enums.ProgrammingLanguages;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,9 +22,6 @@ public record ProjectRequestDto(
     @NotBlank(message = "Base package is required")
     @Pattern(regexp = "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+[0-9a-z_]$", message = "Must be a valid Java package name (e.g., com.goplan.api)")
     String basePackage,
-
-    @NotNull(message = "Programming language is required")
-    ProgrammingLanguages language,
 
     @NotNull(message = "Framework is required")
     Frameworks framework,
