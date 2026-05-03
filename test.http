@@ -4,8 +4,8 @@ Content-Type: application/json
 {
   "projectName": "my-cool-api",
   "basePackage": "com.goplan.demo",
-  "language": "CSHARP",
-  "framework": "ASP_NET_CORE",
+  "language": "JAVA",
+  "framework": "SPRING_BOOT",
   "features": [
     "Models",
     "Controllers"

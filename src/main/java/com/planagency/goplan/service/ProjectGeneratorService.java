@@ -3,7 +3,6 @@ import com.planagency.goplan.dto.ProjectRequestDto;
 import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.util.zip.ZipOutputStream;
-import lombok.RequiredArgsConstructor;
 import java.util.zip.ZipEntry;
 import java.util.Map;
 import com.planagency.goplan.enums.Frameworks;
@@ -17,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ProjectGeneratorService {
 
     private final Map<Frameworks, ProjectGeneratorStrategy> strategyMap;

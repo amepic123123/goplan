@@ -20,6 +20,7 @@ import org.springframework.http.MediaType;
 @CrossOrigin(origins = "*")
 public class ProjectGeneratorController {
     static final String BASE_URL = "/api/v1/projects";
+
     ProjectGeneratorService projectGeneratorService;
 
     public ProjectGeneratorController(ProjectGeneratorService projectGeneratorService) {
