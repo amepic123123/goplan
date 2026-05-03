@@ -8,15 +8,18 @@ import java.util.zip.ZipOutputStream;
 import com.planagency.goplan.service.TemplateRenderingService;
 import java.util.zip.ZipEntry;
 import java.util.Map;
+import com.planagency.goplan.service.GithubTemplateFetcher;
 
 @Component
 public class SpringBootGenerator implements ProjectGeneratorStrategy {
 
 
     TemplateRenderingService templateRenderingService;
+    GithubTemplateFetcher githubTemplateFetcher;
 
-     public SpringBootGenerator(TemplateRenderingService templateRenderingService) {
+     public SpringBootGenerator(TemplateRenderingService templateRenderingService, GithubTemplateFetcher githubTemplateFetcher) {
         this.templateRenderingService = templateRenderingService;
+        this.githubTemplateFetcher = githubTemplateFetcher;
     }
 
     @Override
@@ -32,14 +35,17 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
             "projectName", request.projectName(),
             "basePackage", request.basePackage()
         );
-        String coreFolderContent = templateRenderingService.renderTemplate("Application.java.ftl", templateData);
+        String rowCoreFileContent = githubTemplateFetcher.fetchTemplate("spring-boot/Application.java.ftl");
+        String coreFileContent = templateRenderingService.renderTemplateFromGithub("Application.java.ftl", rowCoreFileContent, templateData);
         String packagePath = request.basePackage().replace('.', '/') + "/";
         String coreFilePath = baseFolder + "src/main/java/" + packagePath + "Application.java";
 
-        String pomContent = templateRenderingService.renderTemplate("pom.xml.ftl", templateData);
-        addFileToZip(zipOutPut, baseFolder + "pom.xml", pomContent);
-        addFileToZip(zipOutPut, coreFilePath, coreFolderContent);
-        
+        String rowPomContent = githubTemplateFetcher.fetchTemplate("spring-boot/pom.xml.ftl");
+        String pomContent = templateRenderingService.renderTemplateFromGithub("pom.xml.ftl", rowPomContent, templateData);
+        String pomFilePath = baseFolder + "pom.xml";
+
+        addFileToZip(zipOutPut, pomFilePath, pomContent);
+        addFileToZip(zipOutPut, coreFilePath, coreFileContent);
     }
     
     private void addFileToZip(ZipOutputStream zipOutputStream, String filePath, String content) throws IOException {
