@@ -1,0 +1,13 @@
+POST http://localhost:8080/api/v1/projects/generate
+Content-Type: application/json
+
+{
+  "projectName": "my-cool-api",
+  "basePackage": "com.goplan.demo",
+  "language": "CSHARP",
+  "framework": "ASP_NET_CORE",
+  "features": [
+    "Models",
+    "Controllers"
+  ]
+}
