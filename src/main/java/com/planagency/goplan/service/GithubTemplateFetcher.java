@@ -1,5 +1,6 @@
 package com.planagency.goplan.service;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -18,6 +19,7 @@ public class GithubTemplateFetcher {
                 .build();
     }
 
+    @Cacheable(value = "templates", key = "#templateName")
     public String fetchTemplate(String templateName){
         log.info("Fetching remote template from github {}", templateName);
         try{

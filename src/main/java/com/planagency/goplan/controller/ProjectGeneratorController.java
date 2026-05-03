@@ -3,6 +3,8 @@ package com.planagency.goplan.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import com.planagency.goplan.service.ProjectGeneratorService;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import jakarta.validation.Valid;
 
@@ -21,7 +23,7 @@ import org.springframework.http.MediaType;
 public class ProjectGeneratorController {
     static final String BASE_URL = "/api/v1/projects";
 
-    ProjectGeneratorService projectGeneratorService;
+    private final ProjectGeneratorService projectGeneratorService;
 
     public ProjectGeneratorController(ProjectGeneratorService projectGeneratorService) {
         this.projectGeneratorService = projectGeneratorService;
@@ -30,9 +32,10 @@ public class ProjectGeneratorController {
     @PostMapping("/generate")
     public ResponseEntity<byte[]> generateProject(@Valid @RequestBody ProjectRequestDto request) {
         byte[] projectZip = projectGeneratorService.generateProject(request);
-       return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + request.projectName() + ".zip\"")
-                .contentType(MediaType.parseMediaType("application/zip"))
-                .body(projectZip);
+        String safeName = URLEncoder.encode(request.projectName(), StandardCharsets.UTF_8);
+           return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + safeName + ".zip\"")
+            .contentType(MediaType.parseMediaType("application/zip"))
+            .body(projectZip);
     }
 }

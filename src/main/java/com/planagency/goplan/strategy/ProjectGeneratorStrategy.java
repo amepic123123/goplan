@@ -1,4 +1,4 @@
-package com.planagency.goplan.startegy;
+package com.planagency.goplan.strategy;
 
 import com.planagency.goplan.enums.Frameworks;
 import com.planagency.goplan.dto.ProjectRequestDto;

@@ -6,7 +6,7 @@ import java.util.zip.ZipOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.Map;
 import com.planagency.goplan.enums.Frameworks;
-import com.planagency.goplan.startegy.ProjectGeneratorStrategy;
+import com.planagency.goplan.strategy.ProjectGeneratorStrategy;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;

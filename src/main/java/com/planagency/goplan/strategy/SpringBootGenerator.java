@@ -1,4 +1,4 @@
-package com.planagency.goplan.startegy;
+package com.planagency.goplan.strategy;
 
 import com.planagency.goplan.enums.*;
 import org.springframework.stereotype.Component;
@@ -9,13 +9,13 @@ import com.planagency.goplan.service.TemplateRenderingService;
 import java.util.zip.ZipEntry;
 import java.util.Map;
 import com.planagency.goplan.service.GithubTemplateFetcher;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class SpringBootGenerator implements ProjectGeneratorStrategy {
 
-
-    TemplateRenderingService templateRenderingService;
-    GithubTemplateFetcher githubTemplateFetcher;
+    private final TemplateRenderingService templateRenderingService;
+    private final GithubTemplateFetcher githubTemplateFetcher;
 
      public SpringBootGenerator(TemplateRenderingService templateRenderingService, GithubTemplateFetcher githubTemplateFetcher) {
         this.templateRenderingService = templateRenderingService;
@@ -51,7 +51,7 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
     private void addFileToZip(ZipOutputStream zipOutputStream, String filePath, String content) throws IOException {
         ZipEntry zipEntry = new ZipEntry(filePath);
         zipOutputStream.putNextEntry(zipEntry);
-        zipOutputStream.write(content.getBytes());
+        zipOutputStream.write(content.getBytes(StandardCharsets.UTF_8));
         zipOutputStream.closeEntry();
     }
 }
