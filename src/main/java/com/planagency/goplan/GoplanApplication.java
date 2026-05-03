@@ -14,7 +14,7 @@ public class GoplanApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(GoplanApplication.class, args);
-		log.info("GoPlan application started successfully");
+		log.info("GoPlan application started successfully we love abood");
 	}
 
 }
