@@ -4,6 +4,7 @@ public enum Features {
     MODELS,
     CONTROLLERS,
     SERVICES,
-    REPOSITORIES
+    REPOSITORIES,
+    DOCKER
     
 }

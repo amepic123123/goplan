@@ -14,6 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
+
 @Slf4j
 @Service
 public class ProjectGeneratorService {
@@ -32,7 +33,7 @@ public class ProjectGeneratorService {
         if (strategy == null) {
             throw new IllegalArgumentException("No generator found for framework: " + request.framework());
         }
-
+        
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              ZipOutputStream zipOutputStream = new ZipOutputStream(byteArrayOutputStream)) {
 
