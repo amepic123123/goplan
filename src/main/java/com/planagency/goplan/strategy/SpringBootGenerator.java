@@ -6,11 +6,18 @@ import com.planagency.goplan.dto.ProjectRequestDto;
 import java.io.IOException;
 import java.util.zip.ZipOutputStream;
 import com.planagency.goplan.service.TemplateRenderingService;
+import com.planagency.mapping.ValidationMapper;
 
 import java.util.zip.ZipEntry;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.planagency.goplan.service.GithubTemplateFetcher;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
+import java.util.HashMap;
 
 @Component
 public class SpringBootGenerator implements ProjectGeneratorStrategy {
@@ -32,43 +39,82 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
     public void generateProject(ZipOutputStream zipOutPut, ProjectRequestDto request) throws IOException {
         String baseFolder = request.projectName() + "/";
 
-        Map<String, Object> templateData = Map.of(
+        Map<String, Object> commonTemplateData = Map.of(
             "projectName", request.projectName(),
             "basePackage", request.basePackage(),
-            "serverPort", "8080"//,
-            // "modelName", request.modelNames()
+            "serverPort", "8080"
         );
 
-        //features implementation
-        if(request.features().contains(Features.CONTROLLERS)){
+        createDirectoryStructure(zipOutPut, baseFolder);
+        addCoreFiles(zipOutPut, baseFolder, commonTemplateData, request.basePackage());
+        addPomFile(zipOutPut, baseFolder, commonTemplateData);
+        addMavenWrapper(zipOutPut, baseFolder);
+        addApplicationProperties(zipOutPut, baseFolder, commonTemplateData);
 
-            addControllerFiles(zipOutPut, baseFolder, templateData, request.basePackage());
+        if(request.features().contains(Features.CONTROLLERS)){
+            addControllerFiles(zipOutPut, baseFolder, commonTemplateData, request.basePackage());
         }
         if(request.features().contains(Features.SERVICES)){
-            addServiceFiles(zipOutPut, baseFolder, templateData, request.basePackage());
+            addServiceFiles(zipOutPut, baseFolder, commonTemplateData, request.basePackage());
         }
         if(request.features().contains(Features.REPOSITORIES)){
-            addRepositoryFiles(zipOutPut, baseFolder, templateData, request.basePackage());
+            addRepositoryFiles(zipOutPut, baseFolder, commonTemplateData, request.basePackage());
         }
         if(request.features().contains(Features.DOCKER)){
-            addDockerFile(zipOutPut, baseFolder, templateData);
+            addDockerFile(zipOutPut, baseFolder, commonTemplateData);
         }
-        // if(request.features().contains(Features.MODELS)){
-        //     for(String modelName : request.modelNames()){
-        //     templateData = Map.of(
-        //         "projectName", request.projectName(),
-        //         "basePackage", request.basePackage(),
-        //         "serverPort", "8080",
-        //         "modelName", modelName
-        //     );
-        //     addModelFiles(zipOutPut, baseFolder, templateData, request.basePackage());
-        //     }
+        if(request.features().contains(Features.MODELS) && request.models() != null && !request.models().isEmpty()){
+            for (var entry : request.models().entrySet()) {
+                Map<String, Object> modelTemplateData = buildModelTemplateData(request, entry.getKey(), entry.getValue());
+                addModelFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+            }
+        }
+    }
 
-        createDirectoryStructure(zipOutPut, baseFolder);
-        addCoreFiles(zipOutPut, baseFolder, templateData, request.basePackage());
-        addPomFile(zipOutPut, baseFolder, templateData);
-        addMavenWrapper(zipOutPut, baseFolder);
-        addApplicationProperties(zipOutPut, baseFolder, templateData);
+    private Map<String, Object> buildModelTemplateData(ProjectRequestDto request, String modelName, Map<String, String> props) {
+        Map<String, String> safeProps = props != null ? props : Map.of();
+
+        List<Map<String, String>> properties = safeProps.entrySet().stream()
+            .map(e -> {
+                String name = e.getKey();
+                String userType = e.getValue();
+                String javaType = ValidationMapper.mapType(userType);
+                String validation = ValidationMapper.mapValidation(name);
+                Map<String, String> field = new HashMap<>();
+                field.put("name", name);
+                field.put("fieldName", name);
+                field.put("type", javaType);
+                field.put("fieldType", javaType);
+                field.put("javaType", javaType);
+                field.put("validation", validation);
+                return field;
+            })
+            .collect(Collectors.toList());
+
+        Set<String> imports = new HashSet<>();
+        for (var p : properties) {
+            if ("LocalDateTime".equals(p.get("type"))) {
+                imports.add("java.time.LocalDateTime");
+            }
+            String validation = p.get("validation");
+            if (validation.contains("@Email")) imports.add("jakarta.validation.constraints.Email");
+            if (validation.contains("@NotBlank")) imports.add("jakarta.validation.constraints.NotBlank");
+            if (validation.contains("@Pattern")) imports.add("jakarta.validation.constraints.Pattern");
+            if (validation.contains("@Min")) imports.add("jakarta.validation.constraints.Min");
+            if (validation.contains("@Max")) imports.add("jakarta.validation.constraints.Max");
+        }
+
+        Map<String, Object> modelTemplateData = new HashMap<>();
+        modelTemplateData.put("projectName", request.projectName());
+        modelTemplateData.put("basePackage", request.basePackage());
+        modelTemplateData.put("serverPort", "8080");
+        modelTemplateData.put("modelName", modelName);
+        modelTemplateData.put("properties", properties);
+        modelTemplateData.put("fields", properties);
+        modelTemplateData.put("attributes", properties);
+        modelTemplateData.put("imports", imports);
+
+        return modelTemplateData;
     }
     // Helper method to create directory structure
     private void createDirectoryStructure(ZipOutputStream zipOutPut, String baseFolder) throws IOException {
@@ -161,3 +207,5 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
         zipOutputStream.closeEntry();
     }
 }
+
+

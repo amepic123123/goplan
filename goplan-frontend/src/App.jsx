@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from './components/ui/Button';
 import { FrameworkSelector } from './components/ui/FrameworkSelector';
 import { Input } from './components/ui/Input';
-import { MultiSelectDropdown } from './components/ui/MultiSelectDropdown';
+import { ArchitectureBuilder } from './components/ui/ArchitectureBuilder';
 import { Zap, Download, AlertCircle } from 'lucide-react';
 
 const FRAMEWORK_OPTIONS = [
@@ -40,7 +40,8 @@ function App() {
     projectName: '',
     basePackage: '',
     framework: 'SPRING_BOOT',
-    features: ['MODELS', 'CONTROLLERS', 'SERVICES', 'REPOSITORIES']
+    features: ['MODELS', 'CONTROLLERS', 'SERVICES', 'REPOSITORIES'],
+    models: []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -55,6 +56,10 @@ function App() {
 
   const handleFeaturesChange = (newFeatures) => {
     setFormData(prev => ({ ...prev, features: newFeatures }));
+  };
+
+  const handleModelsChange = (newModels) => {
+    setFormData(prev => ({ ...prev, models: newModels }));
   };
 
   const handleSubmit = async (e) => {
@@ -100,13 +105,30 @@ function App() {
       return;
     }
 
+    // Transform models array to the required JSON format
+    const transformedModels = {};
+    for (const m of formData.models) {
+      if (!m.name) continue;
+      const fieldsObj = {};
+      for (const f of m.fields) {
+        if (!f.name) continue;
+        fieldsObj[f.name] = f.type;
+      }
+      transformedModels[m.name] = fieldsObj;
+    }
+
+    const payload = {
+      ...formData,
+      models: transformedModels
+    };
+
     try {
       const response = await fetch('http://localhost:8080/api/v1/projects/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -129,9 +151,6 @@ function App() {
       // Trigger the download
       link.click();
       
-      // Crucial: Wait before removing the link and revoking the URL.
-      // If removed immediately, the browser ignores the 'download' attribute 
-      // and falls back to the blob's generated UUID!
       setTimeout(() => {
         if (document.body.contains(link)) {
           document.body.removeChild(link);
@@ -146,79 +165,94 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col items-center py-6 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-2xl">
-        <div className="mb-5 text-center">
-          <div className="inline-flex items-center justify-center p-2 bg-zinc-900 border border-zinc-800 rounded-2xl mb-2">
-            <Zap className="w-5 h-5 text-zinc-50" />
+    <div className="min-h-screen bg-zinc-950 flex flex-col pt-8 pb-12 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-7xl mx-auto w-full">
+        <div className="mb-8 flex items-center space-x-3">
+          <div className="inline-flex items-center justify-center p-3 bg-red-600 text-white shadow-sm">
+            <Zap className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-50 mb-1">
-            Configure Your Engine
-          </h1>
-          <p className="text-sm text-zinc-400">
-            Set up your software architecture and instantly download the scaffolded structure.
-          </p>
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-zinc-50">
+              GoPlan Engine
+            </h1>
+            <p className="text-sm text-zinc-400 font-medium">
+              Configure architecture, models, and scaffold instantly.
+            </p>
+          </div>
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-5 sm:p-6 backdrop-blur-sm">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-zinc-50 pb-1 border-b border-zinc-800/80">
-                Project Details
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  id="projectName"
-                  label="Project Name"
-                  placeholder="e.g., my-awesome-api"
-                  value={formData.projectName}
-                  onChange={handleChange('projectName')}
-                  required
+        <form onSubmit={handleSubmit}>
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Left Column: Settings */}
+            <div className="w-full lg:w-1/3 space-y-6">
+              <div className="bg-zinc-900 border-2 border-zinc-800 p-6">
+                <h2 className="text-xl font-bold text-zinc-50 mb-4 pb-2 border-b-2 border-zinc-800">
+                  Project Details
+                </h2>
+                <div className="space-y-4">
+                  <Input
+                    id="projectName"
+                    label="Project Name"
+                    placeholder="e.g., my-awesome-api"
+                    value={formData.projectName}
+                    onChange={handleChange('projectName')}
+                    required
+                  />
+                  <Input
+                    id="basePackage"
+                    label="Base Package"
+                    placeholder="e.g., com.example.api"
+                    value={formData.basePackage}
+                    onChange={handleChange('basePackage')}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="bg-zinc-900 border-2 border-zinc-800 p-6">
+                <h2 className="text-xl font-bold text-zinc-50 mb-4 pb-2 border-b-2 border-zinc-800">
+                  Framework Selection
+                </h2>
+                <FrameworkSelector
+                  options={FRAMEWORK_OPTIONS}
+                  value={formData.framework}
+                  onChange={handleFrameworkChange}
                 />
-                <Input
-                  id="basePackage"
-                  label="Base Package"
-                  placeholder="e.g., com.example.api"
-                  value={formData.basePackage}
-                  onChange={handleChange('basePackage')}
-                  required
-                />
+              </div>
+
+              {error && (
+                <div className="p-4 bg-red-950/30 border-2 border-red-900 flex items-start">
+                  <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                  <p className="text-sm font-medium text-red-400">{error}</p>
+                </div>
+              )}
+
+              <div className="pt-2 sticky top-6">
+                <Button 
+                  type="submit" 
+                  loading={loading} 
+                  className="w-full text-base py-3 bg-red-600 hover:bg-red-700 text-white uppercase tracking-wider font-black shadow-sm"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  Generate Project
+                </Button>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h2 className="text-lg font-semibold text-zinc-50 pb-1 border-b border-zinc-800/80">
-                Framework Selection
-              </h2>
-              <FrameworkSelector
-                options={FRAMEWORK_OPTIONS}
-                value={formData.framework}
-                onChange={handleFrameworkChange}
-                featureOptions={FEATURE_OPTIONS}
-                features={formData.features}
-                onFeaturesChange={handleFeaturesChange}
-              />
-            </div>
-
-            {error && (
-              <div className="p-4 rounded-md bg-red-950/50 border border-red-900 flex items-start">
-                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
-                <p className="text-sm text-red-200">{error}</p>
+            {/* Right Column: Architecture Builder */}
+            <div className="w-full lg:w-2/3">
+              <div className="bg-zinc-900 border-2 border-zinc-800 p-6 min-h-full">
+                <ArchitectureBuilder 
+                  models={formData.models} 
+                  onModelsChange={handleModelsChange} 
+                  featureOptions={FEATURE_OPTIONS}
+                  features={formData.features}
+                  onFeaturesChange={handleFeaturesChange}
+                />
               </div>
-            )}
-
-            <div className="pt-4 flex justify-end">
-              <Button 
-                type="submit" 
-                loading={loading} 
-                className="w-full sm:w-auto"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Generate Project
-              </Button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );
