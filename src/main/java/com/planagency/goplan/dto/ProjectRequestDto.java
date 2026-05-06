@@ -7,6 +7,7 @@ import com.planagency.goplan.enums.Frameworks;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.Map;
 import jakarta.validation.constraints.Size;
 
 
@@ -27,7 +28,9 @@ public record ProjectRequestDto(
     Frameworks framework,
 
     @NotNull(message = "Features list cannot be null")
-    List<Features> features
+    List<Features> features,
+
+    Map<String, Map<String, String>> models
 
 
 ) {}

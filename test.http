@@ -7,7 +7,14 @@ Content-Type: application/json
   "language": "JAVA",
   "framework": "SPRING_BOOT",
   "features": [
-    "Models",
-    "Controllers"
+      "MODELS",
+      "CONTROLLERS",
+      "SERVICES",
+      "REPOSITORIES",
+      "DOCKER"
+  ],
+  "modelNames": [
+    "User",
+    "Product"
   ]
 }

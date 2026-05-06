@@ -6,6 +6,7 @@ import com.planagency.goplan.dto.ProjectRequestDto;
 import java.io.IOException;
 import java.util.zip.ZipOutputStream;
 import com.planagency.goplan.service.TemplateRenderingService;
+
 import java.util.zip.ZipEntry;
 import java.util.Map;
 import com.planagency.goplan.service.GithubTemplateFetcher;
@@ -34,7 +35,8 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
         Map<String, Object> templateData = Map.of(
             "projectName", request.projectName(),
             "basePackage", request.basePackage(),
-            "serverPort", "8080"
+            "serverPort", "8080"//,
+            // "modelName", request.modelNames()
         );
 
         //features implementation
@@ -51,10 +53,17 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
         if(request.features().contains(Features.DOCKER)){
             addDockerFile(zipOutPut, baseFolder, templateData);
         }
-        if(request.features().contains(Features.MODELS)){
-            
-            addModelFiles(zipOutPut, baseFolder, templateData, request.basePackage());
-        }
+        // if(request.features().contains(Features.MODELS)){
+        //     for(String modelName : request.modelNames()){
+        //     templateData = Map.of(
+        //         "projectName", request.projectName(),
+        //         "basePackage", request.basePackage(),
+        //         "serverPort", "8080",
+        //         "modelName", modelName
+        //     );
+        //     addModelFiles(zipOutPut, baseFolder, templateData, request.basePackage());
+        //     }
+
         createDirectoryStructure(zipOutPut, baseFolder);
         addCoreFiles(zipOutPut, baseFolder, templateData, request.basePackage());
         addPomFile(zipOutPut, baseFolder, templateData);
@@ -76,20 +85,20 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
     }
     // Helper method to add Maven Wrapper files
     private void addMavenWrapper(ZipOutputStream zipOutPut, String baseFolder) throws IOException {
-        String mvnwWrapperContent = githubTemplateFetcher.fetchTemplate("spring-boot/.mvn/wrapper/maven-wrapper.properties.ftl");
+        String mvnwWrapperContent = githubTemplateFetcher.fetchTemplate(".mvn/wrapper/maven-wrapper.properties.ftl");
         String renderedMvnwWrapper = templateRenderingService.renderTemplateFromGithub("maven-wrapper.properties", mvnwWrapperContent, Map.of());
         addFileToZip(zipOutPut, baseFolder + ".mvn/wrapper/maven-wrapper.properties", renderedMvnwWrapper);
         
-        String mvnwContent = githubTemplateFetcher.fetchTemplate("spring-boot/mvnw.ftl");
+        String mvnwContent = githubTemplateFetcher.fetchTemplate("mvnw.ftl");
         String renderedMvnw = templateRenderingService.renderTemplateFromGithub("mvnw", mvnwContent, Map.of());
         addFileToZip(zipOutPut, baseFolder + "mvnw", renderedMvnw);
-        String mvnwCmdContent = githubTemplateFetcher.fetchTemplate("spring-boot/mvnw.cmd.ftl");
+        String mvnwCmdContent = githubTemplateFetcher.fetchTemplate("mvnw.cmd.ftl");
         String renderedMvnwCmd = templateRenderingService.renderTemplateFromGithub("mvnw.cmd", mvnwCmdContent, Map.of());
         addFileToZip(zipOutPut, baseFolder + "mvnw.cmd", renderedMvnwCmd);
     }
     // Helper method to add core application file
     private void addCoreFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
-        String coreFileContent = githubTemplateFetcher.fetchTemplate("spring-boot/Application.java.ftl");
+        String coreFileContent = githubTemplateFetcher.fetchTemplate("Application.java.ftl");
         String renderedCoreFile = templateRenderingService.renderTemplateFromGithub("Application.java.ftl", coreFileContent, templateData);
         String packagePath = basePackage.replace('.', '/') + "/";
         String coreFilePath = baseFolder + "src/main/java/" + packagePath + "Application.java";
@@ -97,53 +106,54 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
     }
     // Helper method to add POM file
     private void addPomFile(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData) throws IOException {
-        String pomContent = githubTemplateFetcher.fetchTemplate("spring-boot/pom.xml.ftl");
+        String pomContent = githubTemplateFetcher.fetchTemplate("pom.xml.ftl");
         String renderedPom = templateRenderingService.renderTemplateFromGithub("pom.xml.ftl", pomContent, templateData);
         String pomFilePath = baseFolder + "pom.xml";
         addFileToZip(zipOutPut, pomFilePath, renderedPom);
     }
     // Helper method to add controller file
     private void addControllerFiles(ZipOutputStream zipOutPut,String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
-      String controllerContent = githubTemplateFetcher.fetchTemplate("spring-boot/controller/testController.java.ftl");
+      String controllerContent = githubTemplateFetcher.fetchTemplate("controller/testController.java.ftl");
       String renderedController = templateRenderingService.renderTemplateFromGithub("testController.java.ftl", controllerContent, templateData);
       String controllerPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/controller/TestController.java";
             addFileToZip(zipOutPut, controllerPath, renderedController);
     }
     // Helper method to add service file
     private void addServiceFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
-        String serviceContent = githubTemplateFetcher.fetchTemplate("spring-boot/service/testService.java.ftl");
+        String serviceContent = githubTemplateFetcher.fetchTemplate("service/testService.java.ftl");
         String renderedService = templateRenderingService.renderTemplateFromGithub("testService.java.ftl", serviceContent, templateData);
         String servicePath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/service/TestService.java";
         addFileToZip(zipOutPut, servicePath, renderedService);
     }
     // Helper method to add model file
     private void addModelFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
-        String modelContent = githubTemplateFetcher.fetchTemplate("spring-boot/model/testModel.java.ftl");
+        String modelContent = githubTemplateFetcher.fetchTemplate("model/testModel.java.ftl");
         String renderedModel = templateRenderingService.renderTemplateFromGithub("testModel.java.ftl", modelContent, templateData);
-        String modelPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/model/TestModel.java";
+        String modelPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/model/" + templateData.get("modelName") + ".java";
         addFileToZip(zipOutPut, modelPath, renderedModel);
     }
     // Helper method to add repository file
     private void addRepositoryFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
-        String repositoryContent = githubTemplateFetcher.fetchTemplate("spring-boot/repository/testRepository.java.ftl");
+        String repositoryContent = githubTemplateFetcher.fetchTemplate("repository/testRepository.java.ftl");
         String renderedRepository = templateRenderingService.renderTemplateFromGithub("testRepository.java.ftl", repositoryContent, templateData);
         String repositoryPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/repository/TestRepository.java";
         addFileToZip(zipOutPut, repositoryPath, renderedRepository);
     }
     // Helper method to add Dockerfile
     private void addDockerFile(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData) throws IOException {
-        String dockerContent = githubTemplateFetcher.fetchTemplate("spring-boot/Dockerfile.ftl");
+        String dockerContent = githubTemplateFetcher.fetchTemplate("Dockerfile.ftl");
         String renderedDocker = templateRenderingService.renderTemplateFromGithub("Dockerfile.ftl", dockerContent, templateData);
         String dockerPath = baseFolder + "Dockerfile";
         addFileToZip(zipOutPut, dockerPath, renderedDocker);
     }
     // Helper method to add application.properties file
     private void addApplicationProperties(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData) throws IOException {
-        String propertiesContent = githubTemplateFetcher.fetchTemplate("spring-boot/src/main/resources/application.properties.ftl");
+        String propertiesContent = githubTemplateFetcher.fetchTemplate("src/main/resources/application.properties.ftl");
         String renderedProperties = templateRenderingService.renderTemplateFromGithub("application.properties.ftl", propertiesContent, templateData);
         String propertiesPath = baseFolder + "src/main/resources/application.properties";
         addFileToZip(zipOutPut, propertiesPath, renderedProperties);
     }
+   
     private void addFileToZip(ZipOutputStream zipOutputStream, String filePath, String content) throws IOException {
         ZipEntry zipEntry = new ZipEntry(filePath);
         zipOutputStream.putNextEntry(zipEntry);
