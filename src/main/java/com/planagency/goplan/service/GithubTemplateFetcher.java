@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import com.planagency.goplan.enums.Frameworks;
 import com.planagency.goplan.dto.ManifestDto;
 import com.planagency.goplan.dto.TemplateFileDto;
@@ -55,7 +57,19 @@ public class GithubTemplateFetcher {
        if(templateCache == null){
         loadManifest(Frameworks.SPRING_BOOT);
        }
-       return templateCache.get(templatePath);
+       String template = templateCache.get(templatePath);
+       if (template == null) {
+           log.debug("Template {} not found in manifest cache, falling back to classpath templates", templatePath);
+           String resourcePath = "templates/" + templatePath;
+           try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+               if (is != null) {
+                   return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+               }
+           } catch (Exception e) {
+               log.warn("Failed to read classpath template {}", resourcePath, e);
+           }
+       }
+       return template;
     }
 
     private void loadManifest(Frameworks framework){

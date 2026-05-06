@@ -1,16 +1,35 @@
+### Basic scaffold request
 POST http://localhost:8080/api/v1/projects/generate
 Content-Type: application/json
+Accept: application/zip
 
 {
-  "projectName": "my-cool-niggerapop",
+  "projectName": "my-cool-api",
   "basePackage": "com.goplan.demo",
   "framework": "SPRING_BOOT",
   "features": [
-      "MODELS",
-      "CONTROLLERS",
-      "SERVICES",
-      "REPOSITORIES",
-      "DOCKER"
+    "CONTROLLERS",
+    "SERVICES",
+    "REPOSITORIES",
+    "DOCKER"
+  ]
+}
+
+### Full request with models, services, repositories, controllers, and docker
+POST http://localhost:8080/api/v1/projects/generate
+Content-Type: application/json
+Accept: application/zip
+
+{
+  "projectName": "my-lao-api-with-models",
+  "basePackage": "com.goplan.demo",
+  "framework": "SPRING_BOOT",
+  "features": [
+    "MODELS",
+    "CONTROLLERS",
+    "SERVICES",
+    "REPOSITORIES",
+    "DOCKER"
   ],
   "models": {
     "User": {

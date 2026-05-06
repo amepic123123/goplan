@@ -67,8 +67,20 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
             for (var entry : request.models().entrySet()) {
                 Map<String, Object> modelTemplateData = buildModelTemplateData(request, entry.getKey(), entry.getValue());
                 addModelFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                // generate DTO, repository and service for each model
+                addDtoFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                addRepositoryFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                addServiceFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                addMapperFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
             }
         }
+    }
+
+    private void addDtoFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
+        String dtoContent = githubTemplateFetcher.fetchTemplate("dto/testDto.java.ftl");
+        String renderedDto = templateRenderingService.renderTemplateFromGithub("testDto.java.ftl", dtoContent, templateData);
+        String dtoPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/dto/" + templateData.get("modelName") + "Dto.java";
+        addFileToZip(zipOutPut, dtoPath, renderedDto);
     }
 
     private Map<String, Object> buildModelTemplateData(ProjectRequestDto request, String modelName, Map<String, String> props) {
@@ -167,23 +179,40 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
     // Helper method to add service file
     private void addServiceFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
         String serviceContent = githubTemplateFetcher.fetchTemplate("service/testService.java.ftl");
-        String renderedService = templateRenderingService.renderTemplateFromGithub("testService.java.ftl", serviceContent, templateData);
-        String servicePath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/service/TestService.java";
+        Map<String, Object> serviceTemplateData = new HashMap<>(templateData);
+        String serviceName = templateData.containsKey("modelName") ? String.valueOf(templateData.get("modelName")) : "Test";
+        serviceTemplateData.put("serviceName", serviceName);
+        serviceTemplateData.put("modelSpecific", templateData.containsKey("modelName"));
+        String renderedService = templateRenderingService.renderTemplateFromGithub("testService.java.ftl", serviceContent, serviceTemplateData);
+        String servicePath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/service/" + serviceName + "Service.java";
         addFileToZip(zipOutPut, servicePath, renderedService);
     }
     // Helper method to add model file
     private void addModelFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
         String modelContent = githubTemplateFetcher.fetchTemplate("model/testModel.java.ftl");
         String renderedModel = templateRenderingService.renderTemplateFromGithub("testModel.java.ftl", modelContent, templateData);
-        String modelPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/model/" + templateData.get("modelName") + ".java";
+        String modelName = String.valueOf(templateData.get("modelName"));
+        String modelPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/model/" + modelName + ".java";
         addFileToZip(zipOutPut, modelPath, renderedModel);
     }
     // Helper method to add repository file
     private void addRepositoryFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
         String repositoryContent = githubTemplateFetcher.fetchTemplate("repository/testRepository.java.ftl");
-        String renderedRepository = templateRenderingService.renderTemplateFromGithub("testRepository.java.ftl", repositoryContent, templateData);
-        String repositoryPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/repository/TestRepository.java";
+        Map<String, Object> repositoryTemplateData = new HashMap<>(templateData);
+        String repositoryName = templateData.containsKey("modelName") ? String.valueOf(templateData.get("modelName")) : "Test";
+        repositoryTemplateData.put("repositoryName", repositoryName);
+        repositoryTemplateData.put("modelSpecific", templateData.containsKey("modelName"));
+        String renderedRepository = templateRenderingService.renderTemplateFromGithub("testRepository.java.ftl", repositoryContent, repositoryTemplateData);
+        String repositoryPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/repository/" + repositoryName + "Repository.java";
         addFileToZip(zipOutPut, repositoryPath, renderedRepository);
+    }
+
+    private void addMapperFiles(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
+        String mapperContent = githubTemplateFetcher.fetchTemplate("mapper/testMapper.java.ftl");
+        String renderedMapper = templateRenderingService.renderTemplateFromGithub("testMapper.java.ftl", mapperContent, templateData);
+        String modelName = String.valueOf(templateData.get("modelName"));
+        String mapperPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/mapper/" + modelName + "Mapper.java";
+        addFileToZip(zipOutPut, mapperPath, renderedMapper);
     }
     // Helper method to add Dockerfile
     private void addDockerFile(ZipOutputStream zipOutPut, String baseFolder, Map<String, Object> templateData) throws IOException {
