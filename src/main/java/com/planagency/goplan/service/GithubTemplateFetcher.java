@@ -32,11 +32,12 @@ public class GithubTemplateFetcher {
     public String fetchManifest(String manifestName){
         log.info("Fetching remote manifest from github {}", manifestName);
         try{
-            return webClient.get()
-            .uri(manifestName)
-            .retrieve()
-            .bodyToMono(String.class)
-            .block();
+            String content = webClient.get()
+                .uri(manifestName)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+            return stripBom(content);
         } catch (Exception e) {
             log.error("Error fetching manifest: {}", manifestName, e);
             throw new RuntimeException("Failed to fetch manifest", e);
@@ -44,7 +45,7 @@ public class GithubTemplateFetcher {
     }
     public Map<String, String> turnManifestToMap(String manifestContent){
         try {
-            ManifestDto manifest = objectMapper.readValue(manifestContent, ManifestDto.class);
+            ManifestDto manifest = objectMapper.readValue(stripBom(manifestContent), ManifestDto.class);
             return manifest.getFiles().stream()
                 .collect(Collectors.toMap(TemplateFileDto::getPath, TemplateFileDto::getContent));
         } catch (Exception e) {
@@ -63,13 +64,19 @@ public class GithubTemplateFetcher {
            String resourcePath = "templates/" + templatePath;
            try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
                if (is != null) {
-                   return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    return stripBom(new String(is.readAllBytes(), StandardCharsets.UTF_8));
                }
            } catch (Exception e) {
                log.warn("Failed to read classpath template {}", resourcePath, e);
            }
        }
-       return template;
+       return stripBom(template);
+    }
+
+    private String stripBom(String s) {
+        if (s == null || s.isEmpty()) return s;
+        if (s.charAt(0) == '\uFEFF') return s.substring(1);
+        return s;
     }
 
     private void loadManifest(Frameworks framework){
