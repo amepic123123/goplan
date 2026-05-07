@@ -38,6 +38,9 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
     @Override
     public void generateProject(ZipOutputStream zipOutPut, ProjectRequestDto request) throws IOException {
         String baseFolder = request.projectName() + "/";
+        boolean hasModels = request.features().contains(Features.MODELS)
+            && request.models() != null
+            && !request.models().isEmpty();
 
         Map<String, Object> commonTemplateData = Map.of(
             "projectName", request.projectName(),
@@ -51,27 +54,33 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
         addMavenWrapper(zipOutPut, baseFolder);
         addApplicationProperties(zipOutPut, baseFolder, commonTemplateData);
 
-        if(request.features().contains(Features.CONTROLLERS)){
+        if(request.features().contains(Features.CONTROLLERS) && !hasModels){
             addControllerFiles(zipOutPut, baseFolder, commonTemplateData, request.basePackage());
         }
-        if(request.features().contains(Features.SERVICES)){
+        if(request.features().contains(Features.SERVICES) && !hasModels){
             addServiceFiles(zipOutPut, baseFolder, commonTemplateData, request.basePackage());
         }
-        if(request.features().contains(Features.REPOSITORIES)){
+        if(request.features().contains(Features.REPOSITORIES) && !hasModels){
             addRepositoryFiles(zipOutPut, baseFolder, commonTemplateData, request.basePackage());
         }
         if(request.features().contains(Features.DOCKER)){
             addDockerFile(zipOutPut, baseFolder, commonTemplateData);
         }
-        if(request.features().contains(Features.MODELS) && request.models() != null && !request.models().isEmpty()){
+        if(hasModels){
             for (var entry : request.models().entrySet()) {
                 Map<String, Object> modelTemplateData = buildModelTemplateData(request, entry.getKey(), entry.getValue());
                 addModelFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
-                // generate DTO, repository and service for each model
                 addDtoFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
-                addRepositoryFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
-                addServiceFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                if(request.features().contains(Features.REPOSITORIES)) {
+                    addRepositoryFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                }
+                if(request.features().contains(Features.SERVICES)) {
+                    addServiceFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                }
                 addMapperFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                if(request.features().contains(Features.CONTROLLERS)) {
+                    addControllerFiles(zipOutPut, baseFolder, modelTemplateData, request.basePackage());
+                }
             }
         }
     }
@@ -171,9 +180,13 @@ public class SpringBootGenerator implements ProjectGeneratorStrategy {
     }
     // Helper method to add controller file
     private void addControllerFiles(ZipOutputStream zipOutPut,String baseFolder, Map<String, Object> templateData, String basePackage) throws IOException {
-      String controllerContent = githubTemplateFetcher.fetchTemplate("controller/testController.java.ftl");
-      String renderedController = templateRenderingService.renderTemplateFromGithub("testController.java.ftl", controllerContent, templateData);
-      String controllerPath = baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/controller/TestController.java";
+    Map<String, Object> controllerTemplateData = new HashMap<>(templateData);
+    String modelName = templateData.containsKey("modelName") ? String.valueOf(templateData.get("modelName")) : "Test";
+    controllerTemplateData.put("modelName", modelName);
+    controllerTemplateData.put("modelSpecific", templateData.containsKey("modelName"));
+     String controllerContent = githubTemplateFetcher.fetchTemplate("controller/testController.java.ftl");
+     String renderedController = templateRenderingService.renderTemplateFromGithub("testController.java.ftl", controllerContent, controllerTemplateData);
+     String controllerPath =  baseFolder + "src/main/java/" + basePackage.replace('.', '/') + "/controller/" + modelName + "Controller.java";
             addFileToZip(zipOutPut, controllerPath, renderedController);
     }
     // Helper method to add service file
